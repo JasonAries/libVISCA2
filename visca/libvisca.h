@@ -32,6 +32,7 @@
 #else
 #  define VISCA_API
 #  define VISCA_POSIX
+#  define __NET_VISCA__ 1
 #endif
 
 /**********************/
@@ -46,6 +47,27 @@
 #define VISCA_CATEGORY_CAMERA1           0x04
 #define VISCA_CATEGORY_PAN_TILTER        0x06
 #define VISCA_CATEGORY_CAMERA2           0x07
+
+//add for osd
+
+#define VISCA_CATEGORY_OSD1 0x06
+#define VISCA_CATEGORY_OSD2 0x04
+#define VISCA_CATEGORY_OSD3 0x7E
+
+
+#define VISCA_OSD_STATUS 0x06
+#define VISCA_OSD_STATUS_SWITCH 0x10
+#define VISCA_OSD_STATUS_ON 0x02
+#define VISCA_OSD_STATUS_OFF 0x03
+
+#define VISCA_OSD_BACK1 0x15
+#define VISCA_OSD_BACK2 0x03
+#define VISCA_OSD_OK1 0x01
+#define VISCA_OSD_OK2 0x02
+#define VISCA_OSD_OK3 0x00
+#define VISCA_OSD_OK4 0x01
+
+
 
 /* Known Vendor IDs */
 #define VISCA_VENDOR_SONY    0x0020
@@ -187,6 +209,7 @@
 #define   VISCA_WIDE_MODE_CINEMA           0x01
 #define   VISCA_WIDE_MODE_16_9             0x02
 #define VISCA_MIRROR                     0x61
+#define VISCA_FLIP_V                     0x66
 #define VISCA_FREEZE                     0x62
 #define   VISCA_FREEZE_ON                  0x02
 #define   VISCA_FREEZE_OFF                 0x03
@@ -451,6 +474,50 @@ typedef struct _VISCA_interface
 	int type;
 } VISCAInterface_t;
 
+#elif __NET_VISCA__
+
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+
+typedef short int16_t;
+
+
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<netinet/in.h>
+#include<sys/un.h>
+#include<sys/ioctl.h>
+
+
+
+/* timeout in us */
+#define VISCA_SERIAL_WAIT              100000
+
+/* size of the local packet buffer */
+#define VISCA_INPUT_BUFFER_SIZE            32
+
+/* This is the interface for the AVR platform.
+ */
+typedef struct _VISCA_interface
+{
+	
+	int port_fd;
+
+	struct sockaddr_in addr_serv;
+	int addrlen;
+
+	// VISCA data:
+	int address;
+	int broadcast;
+
+	// RS232 input buffer
+	unsigned char ibuf[VISCA_INPUT_BUFFER_SIZE];
+	int bytes;
+	int type;
+} VISCAInterface_t;
+
+
 #else
 
 #include <termios.h>
@@ -544,6 +611,10 @@ _VISCA_get_packet(VISCAInterface_t *iface);
 
 VISCA_API uint32_t
 VISCA_open_serial(VISCAInterface_t *iface, const char *device_name);
+
+VISCA_API uint32_t
+VISCA_open_socket(VISCAInterface_t * iface, const char * addr, int port);
+
 
 VISCA_API uint32_t
 VISCA_unread_bytes(VISCAInterface_t *iface, unsigned char *buffer, uint32_t *buffer_size);
@@ -756,6 +827,9 @@ VISCA_set_wide_mode(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t mode
 
 VISCA_API uint32_t
 VISCA_set_mirror(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t power);
+
+VISCA_API uint32_t
+VISCA_set_flip(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t power);
 
 VISCA_API uint32_t
 VISCA_set_freeze(VISCAInterface_t *iface, VISCACamera_t *camera, uint8_t power);
